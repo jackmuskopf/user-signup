@@ -1,5 +1,6 @@
 import webapp2
 import random
+import re
 
 import cgi
 
@@ -10,7 +11,7 @@ header = """
 		<!DOCTYPE html>
 		<html>
 		<head>
-			<title>caesar</title>
+			<title>User-Signup</title>
 		</head>
 		<body>
 
@@ -23,69 +24,47 @@ footer = """
 def color_text(text,color):
 	return '<span style="color:'+color+';">'+text+"""</span><br/>"""
 
-def bad_un(name):
-	for c in name:
-		if (not c.isalpha() and not c.isdigit()) and c != '_':
-			return True
-	return False
 
 def add_errors(errors,form):
-	print errors
-	splitform = form.split("<br><br>")
+	splitform = form.split("</td></tr>")
 	for error in errors:
-		print error
 		if error == invalid_username:
 			splitform[0]+=color_text(invalid_username,'red')
 		elif error == invalid_password:
 			splitform[1]+=color_text(invalid_password,'red')
 		elif error == invalid_confirm:
 			splitform[2]+=color_text(invalid_confirm,'red')
-		error_form = "<br><br>".join(splitform)
-		print error_form
+		elif error == invalid_email:
+			splitform[3]+= color_text(invalid_email,'red')
+	error_form = "</tr></td>".join(splitform)
 	return error_form
 
 
-	#   form = """
-    # <!DOCTYPE html>
-    #   <html>
-    #   <head>
-    #   <title>Unit 2 Rot 13</title>
-    #   </head>
-    #   <body>
-    #   <h2>Enter some text to ROT13:</h2>
-    #   <form method="post">
-    #   <textarea name="text" style="height: 100px; width: 400px; ">
-    #   %(content)s
-    #   </textarea>
-    #   <br>
-    #
-    #   </form>
-    #   </body>
-    # #   </html>
-    #   """
 
-
-
-
-invalid_username = "Username can only contain numbers, letters, and underscores. Must be at least 8 characters long."
-invalid_password = "Password must be at least 8 characters long"
+invalid_username = "Username can only contain numbers, letters, underscores, and hyphens. Must be 8 to 20 characters long."
+invalid_password = "Password must be 8 to 20 characters long"
 invalid_confirm = "Passwords do not match."
-errorMSG = "Key has to be a number"
+invalid_email = "Invalid email address"
+
 
 class Index(webapp2.RequestHandler):
 	 	def write_form(self, username = "",password="",confirm="",email="",errors=[]):
 			form = """
 			<h2>Sign Up</h2>
 				<form method="post">
-					<span>Username: </span><input type="text" name="username">%(username)s
-					<br><br>
-					<span>Password: </span><input type="password" name="password">%(password)s
-					<br><br>
-					<span>Confirm Password: </span><input type="password" name="confirm" >%(confirm)s
-					<br><br>
-					<span>Email(optional): </span><input type="text" name="email">%(email)s
-					<br><br>
-					<input type="submit">
+				<table>
+				<tbody>
+					<tr><td><span>Username: </span></td><td><input type="text" name="username"></td></tr>
+
+					<tr><td><span>Password: </span></td><td><input type="password" name="password"></td></tr>
+
+					<tr><td><span>Confirm Password: </span></td><td><input type="password" name="confirm"></td></tr>
+
+					<tr><td><span>Email : </span></td><td><input type="text" name="email"></td></tr>
+
+				</tbody>
+				</table>
+				<input type="submit">
 				</form>
 
 			      """
@@ -110,48 +89,15 @@ class Index(webapp2.RequestHandler):
 			password = self.request.get("password")
 			confirm = self.request.get("confirm")
 			email = self.request.get("email")
-			if len(username) < 8 or bad_un(username):
+			if not re.match(r"^[a-zA-Z0-9_-]{8,20}$",username):
 				errors.append(invalid_username)
-			if len(password) < 8:
-				print 'yep'
+			if not re.match(r"^.{8,20}$",password):
 				errors.append(invalid_password)
 			elif password != confirm:
 				errors.append(invalid_confirm)
+			if not re.match(r"^[\S]+@[\S]+.[\S]+$",email):
+				errors.append(invalid_email)
 			self.write_form(username = username, errors=errors)
-
-# class Index(webapp2.RequestHandler):
-#
-# 	# def get(self):
-# 	def get(self):
-# 		form = """
-# 			<h1>Caesar Text</h1>
-# 			<form action="/action_page.php">
-# 			  Text: <input type="text" name="intext"><br>
-# 			  Key: <input type="text" name="num"><br>
-# 			  <input type="submit" value="Submit">
-# 			</form>
-# 		"""
-# 		self.response.write(header+form+footer)
-#
-# 	def post(self):
-# 		form = """
-# 			<h1>{0}</h1>
-# 		""".format(caesar(self.request.get("intext"),self.request.get("num")))
-# 		self.response.write(header+form+footer)
-
-# class GenNum(webapp2.RequestHandler):
-#
-#
-# 	def get(self):
-# 		badmessage = "<strong>Only people who click the button are lucky...</strong>"
-# 		self.response.write(header+badmessage+footer)
-#
-# 	def post(self):
-# 		lucky = str(random.randint(0,100))
-# 		successmesssage=header+"<strong>"+lucky+"</strong> is your lucky number!"+footer
-# 		self.response.write(successmesssage)
-#
-
 
 app = webapp2.WSGIApplication([
 	('/', Index),
